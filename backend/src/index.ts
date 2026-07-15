@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import fs from "fs";
+import path from "path";
 import { config } from "./config";
 import { checkHermesHealth } from "./services/hermesClient";
 import { chatRouter } from "./routes/chat";
@@ -41,6 +43,20 @@ app.use("/api/history", historyRouter);
 app.use("/api/models", modelsRouter);
 app.use("/api/settings", settingsRouter);
 
+const staticIndex = path.join(config.staticDir, "index.html");
+const serveStatic = fs.existsSync(staticIndex);
+
+if (serveStatic) {
+  app.use(express.static(config.staticDir, { index: false }));
+  app.get("*", (req, res) => {
+    if (req.path.startsWith("/api")) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    res.sendFile(staticIndex);
+  });
+}
+
 app.use(
   (
     err: Error,
@@ -53,9 +69,12 @@ app.use(
   },
 );
 
-app.listen(config.port, () => {
-  console.log(`ecept Hermes Web Client API listening on http://localhost:${config.port}`);
+app.listen(config.port, "0.0.0.0", () => {
+  console.log(`ecept Hermes Web Client API listening on http://0.0.0.0:${config.port}`);
   console.log(`Proxying Hermes at ${config.hermesApiBaseUrl}`);
+  if (serveStatic) {
+    console.log(`Serving frontend from ${config.staticDir}`);
+  }
   if (!config.hermesApiKey) {
     console.warn("Warning: HERMES_API_KEY is empty. Set it in backend/.env");
   }

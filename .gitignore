@@ -8,3 +8,8 @@ backend/data/settings.json
 .superpowers/
 frontend/dist/
 backend/dist/
+*.tsbuildinfo
+.azure/
+infra/main.parameters.local.json
+backend/public/
+!backend/public/.gitkeep

@@ -323,7 +323,18 @@ Not built yet (by design for phase 1):
 - Additional action buttons beyond Chat and Schedule Task
 - Auth / multi-user portal accounts
 - Rich schedule UI (beyond freeform schedule string)
-- Deploy packaging (Docker, Windows service for the portal itself)
 - Real-time History push when a webhook arrives (refresh / Fetch for now)
+- Durable History storage and cloud-safe models inventory (local Hermes Python)
 
 The Communicate action bar is already structured so future built-in actions can wrap in without a layout rewrite.
+
+---
+
+## Azure auto-deploy
+
+Portal-only deploy to **Azure Container Apps** (Hermes remains on a public HTTPS URL). Tag `v*` releases build and push a Docker image, update the Container App, and smoke-test `/api/health`.
+
+See:
+
+- [docs/azure-deploy.md](docs/azure-deploy.md) — Azure resources, OIDC, GitHub Actions, release process
+- [docs/hermes-wireup.md](docs/hermes-wireup.md) — Hermes secrets and webhook checklist

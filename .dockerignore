@@ -1,0 +1,17 @@
+**/node_modules
+**/dist
+**/.env
+**/.git
+**/.github
+**/logs
+**/*.log
+**/data/settings.json
+**/.superpowers
+**/docs
+**/infra
+release.md
+README.md
+*.md
+frontend/dist
+backend/dist
+backend/logs

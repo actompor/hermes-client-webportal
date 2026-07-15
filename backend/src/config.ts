@@ -21,6 +21,8 @@ export interface PortalConfig {
   logDir: string;
   logFileName: string;
   settingsFilePath: string;
+  /** Directory of built frontend assets (Vite dist). Empty disables static hosting. */
+  staticDir: string;
   /** Public base URL Hermes uses to reach this portal for cron webhooks. */
   portalPublicBaseUrl: string;
   /** Shared HMAC secret for Hermes → portal cron result webhooks. */
@@ -65,6 +67,9 @@ export const config: PortalConfig = {
   logDir: path.resolve(process.env.LOG_DIR ?? path.join(__dirname, "..", "logs")),
   logFileName: "communications.jsonl",
   settingsFilePath,
+  staticDir: process.env.STATIC_DIR
+    ? path.resolve(process.env.STATIC_DIR)
+    : path.resolve(__dirname, "..", "public"),
   portalPublicBaseUrl: normalizeBaseUrl(
     process.env.PORTAL_PUBLIC_BASE_URL || `http://127.0.0.1:${Number(process.env.PORT ?? 8787)}`,
   ),
