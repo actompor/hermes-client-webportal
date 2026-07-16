@@ -38,22 +38,38 @@ scheduleRouter.post("/", async (req, res) => {
     });
     const responseTimeMs = Date.now() - started;
 
-    const record = appendCommunication({
-      action: "schedule",
-      instruction,
-      schedule,
-      jobName: name,
-      jobId: result.jobId !== "unknown" ? result.jobId : undefined,
-      response: result.summary,
-      inputTokens: null,
-      outputTokens: null,
-      totalTokens: null,
-      responseTimeMs,
-      success: true,
-      hermesRaw: result.raw,
-      executionResult: null,
-      executions: [],
-    });
+    let record;
+    try {
+      record = appendCommunication({
+        action: "schedule",
+        instruction,
+        schedule,
+        jobName: name,
+        jobId: result.jobId !== "unknown" ? result.jobId : undefined,
+        response: result.summary,
+        inputTokens: null,
+        outputTokens: null,
+        totalTokens: null,
+        responseTimeMs,
+        success: true,
+        hermesRaw: result.raw,
+        executionResult: null,
+        executions: [],
+      });
+    } catch (logError) {
+      console.error("Failed to persist schedule history:", logError);
+      record = {
+        id: "unlogged",
+        timestamp: new Date().toISOString(),
+        action: "schedule" as const,
+        schedule,
+        jobName: name,
+        jobId: result.jobId !== "unknown" ? result.jobId : undefined,
+        response: result.summary,
+        responseTimeMs,
+        success: true,
+      };
+    }
 
     res.json({
       id: record.id,
@@ -80,10 +96,21 @@ scheduleRouter.post("/", async (req, res) => {
           ? error.message
           : "Unexpected schedule error";
 
-    const record = buildFailureRecord("schedule", instruction, responseTimeMs, message, {
-      schedule,
-      jobName: name,
-    });
+    let record;
+    try {
+      record = buildFailureRecord("schedule", instruction, responseTimeMs, message, {
+        schedule,
+        jobName: name,
+      });
+    } catch (logError) {
+      console.error("Failed to persist schedule failure:", logError);
+      record = {
+        id: "unlogged",
+        timestamp: new Date().toISOString(),
+        action: "schedule" as const,
+        responseTimeMs,
+      };
+    }
 
     res.status(error instanceof HermesApiError ? error.status || 502 : 502).json({
       id: record.id,

@@ -137,6 +137,10 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
               value: '/app/public'
             }
             {
+              name: 'LOG_DIR'
+              value: '/app/logs'
+            }
+            {
               name: 'HERMES_API_BASE_URL'
               value: hermesApiBaseUrl
             }

@@ -27,15 +27,47 @@ export default function CommunicatePage() {
     setModelsError(null);
     try {
       const data = await fetchModels(refresh);
-      setModels(data.models);
+      const nextModels =
+        data.models.length > 0
+          ? data.models
+          : [
+              {
+                id: "hermes-agent",
+                ownedBy: "hermes",
+                root: "hermes-agent",
+                parent: null,
+                provider: "hermes",
+                providerName: "Hermes",
+                model: "hermes-agent",
+                label: "hermes-agent (default)",
+                isCurrent: true,
+              },
+            ];
+      setModels(nextModels);
       setModelsSource(data.source ?? null);
+      // Inventory may be unavailable in Azure; keep chat usable with a default.
+      setModelsError(data.error ?? data.warning ?? null);
       setSelectedModel((current) => {
-        if (current && data.models.some((model) => model.id === current)) {
+        if (current && nextModels.some((model) => model.id === current)) {
           return current;
         }
-        return pickDefaultModel(data.models);
+        return pickDefaultModel(nextModels) || "hermes-agent";
       });
     } catch (err) {
+      setModels([
+        {
+          id: "hermes-agent",
+          ownedBy: "hermes",
+          root: "hermes-agent",
+          parent: null,
+          provider: "hermes",
+          providerName: "Hermes",
+          model: "hermes-agent",
+          label: "hermes-agent (default)",
+          isCurrent: true,
+        },
+      ]);
+      setSelectedModel("hermes-agent");
       setModelsError(err instanceof Error ? err.message : "Failed to load models");
     } finally {
       setModelsLoading(false);
@@ -54,7 +86,7 @@ export default function CommunicatePage() {
     setError(null);
 
     try {
-      const response = await sendChat(text, selectedModel || undefined);
+      const response = await sendChat(text, selectedModel || "hermes-agent");
       setResult(response);
       if (!response.success) {
         setError(response.error ?? "Chat failed");
@@ -141,7 +173,7 @@ export default function CommunicatePage() {
               className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-ink outline-none transition focus:border-brand focus:bg-white focus:ring-2 focus:ring-brand/20 disabled:opacity-60"
             >
               {models.length === 0 ? (
-                <option value="">No models available</option>
+                <option value="hermes-agent">hermes-agent (default)</option>
               ) : (
                 Object.entries(grouped).map(([group, groupModels]) => (
                   <optgroup key={group} label={group}>
@@ -155,12 +187,19 @@ export default function CommunicatePage() {
                 ))
               )}
             </select>
-            {modelsError ? (
+            {modelsError && modelsSource !== "hermes-api" && modelsSource !== "fallback" ? (
               <p className="mt-1.5 text-xs text-rose-600">{modelsError}</p>
             ) : (
               <p className="mt-1.5 text-xs text-mist">
-                {models.length} model{models.length === 1 ? "" : "s"} from Hermes provider inventory
-                {modelsSource ? ` (${modelsSource})` : ""}.
+                {models.length} model{models.length === 1 ? "" : "s"}
+                {modelsSource === "hermes-api"
+                  ? " from Hermes API"
+                  : modelsSource === "hermes-inventory"
+                    ? " from Hermes provider inventory"
+                    : modelsSource
+                      ? ` (${modelsSource})`
+                      : ""}
+                .
               </p>
             )}
           </div>
@@ -183,7 +222,7 @@ export default function CommunicatePage() {
             <button
               type="button"
               onClick={runChat}
-              disabled={!instruction.trim() || busy !== null || !selectedModel}
+              disabled={!instruction.trim() || busy !== null}
               className="rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0369a1] disabled:hover:bg-brand"
             >
               {busy === "chat" ? "Chatting…" : "Chat"}

@@ -1,4 +1,5 @@
 import fs from "fs";
+import os from "os";
 import path from "path";
 import { randomUUID } from "crypto";
 import { config } from "../config";
@@ -11,8 +12,26 @@ import type {
 const MAX_EXECUTIONS = 20;
 
 function ensureLogDir(): void {
-  if (!fs.existsSync(config.logDir)) {
-    fs.mkdirSync(config.logDir, { recursive: true });
+  try {
+    if (!fs.existsSync(config.logDir)) {
+      fs.mkdirSync(config.logDir, { recursive: true });
+    }
+    fs.accessSync(config.logDir, fs.constants.W_OK);
+  } catch (error) {
+    // Container images often run as non-root; fall back to a writable temp dir
+    // so Communicate / History do not 500 or crash the process.
+    const fallback = path.join(os.tmpdir(), "hermes-portal-logs");
+    if (!fs.existsSync(fallback)) {
+      fs.mkdirSync(fallback, { recursive: true });
+    }
+    if (config.logDir !== fallback) {
+      console.warn(
+        `LOG_DIR not writable (${config.logDir}): ${
+          error instanceof Error ? error.message : String(error)
+        }. Using ${fallback}`,
+      );
+      config.logDir = fallback;
+    }
   }
 }
 

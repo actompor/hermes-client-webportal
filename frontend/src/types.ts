@@ -68,6 +68,7 @@ export interface ModelsResponse {
   providers?: HermesProviderGroup[];
   models: HermesModel[];
   error?: string;
+  warning?: string;
 }
 
 export interface SettingsResponse {

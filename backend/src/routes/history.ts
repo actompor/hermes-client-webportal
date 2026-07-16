@@ -34,14 +34,21 @@ function toHistoryItem(item: ReturnType<typeof readCommunications>[number]) {
 }
 
 historyRouter.get("/", (_req, res) => {
-  const limitParam = Number(_req.query.limit ?? 200);
-  const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 1000) : 200;
-  const items = readCommunications(limit);
+  try {
+    const limitParam = Number(_req.query.limit ?? 200);
+    const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 1000) : 200;
+    const items = readCommunications(limit);
 
-  res.json({
-    count: items.length,
-    items: items.map(toHistoryItem),
-  });
+    res.json({
+      count: items.length,
+      items: items.map(toHistoryItem),
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to read communication history";
+    console.error("History read failed:", error);
+    res.status(500).json({ error: message, count: 0, items: [] });
+  }
 });
 
 historyRouter.post("/:id/fetch-result", async (req, res) => {

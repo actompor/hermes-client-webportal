@@ -37,18 +37,35 @@ chatRouter.post("/", async (req, res) => {
     const result = await chatWithHermes(instruction, "hermes-agent");
     const responseTimeMs = Date.now() - started;
 
-    const record = appendCommunication({
-      action: "chat",
-      instruction,
-      model: modelLabel,
-      response: result.content,
-      inputTokens: result.inputTokens,
-      outputTokens: result.outputTokens,
-      totalTokens: result.totalTokens,
-      responseTimeMs,
-      success: true,
-      hermesRaw: result.raw,
-    });
+    let record;
+    try {
+      record = appendCommunication({
+        action: "chat",
+        instruction,
+        model: modelLabel,
+        response: result.content,
+        inputTokens: result.inputTokens,
+        outputTokens: result.outputTokens,
+        totalTokens: result.totalTokens,
+        responseTimeMs,
+        success: true,
+        hermesRaw: result.raw,
+      });
+    } catch (logError) {
+      console.error("Failed to persist chat history:", logError);
+      record = {
+        id: "unlogged",
+        timestamp: new Date().toISOString(),
+        action: "chat" as const,
+        model: modelLabel,
+        response: result.content,
+        inputTokens: result.inputTokens,
+        outputTokens: result.outputTokens,
+        totalTokens: result.totalTokens,
+        responseTimeMs,
+        success: true,
+      };
+    }
 
     res.json({
       id: record.id,
@@ -71,9 +88,20 @@ chatRouter.post("/", async (req, res) => {
           ? error.message
           : "Unexpected chat error";
 
-    const record = buildFailureRecord("chat", instruction, responseTimeMs, message, {
-      model: modelLabel,
-    });
+    let record;
+    try {
+      record = buildFailureRecord("chat", instruction, responseTimeMs, message, {
+        model: modelLabel,
+      });
+    } catch (logError) {
+      console.error("Failed to persist chat failure:", logError);
+      record = {
+        id: "unlogged",
+        timestamp: new Date().toISOString(),
+        action: "chat" as const,
+        responseTimeMs,
+      };
+    }
 
     res.status(error instanceof HermesApiError ? error.status || 502 : 502).json({
       id: record.id,

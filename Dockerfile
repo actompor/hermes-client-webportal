@@ -19,8 +19,11 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8787
 ENV STATIC_DIR=/app/public
+ENV LOG_DIR=/app/logs
 
-RUN addgroup -S portal && adduser -S portal -G portal
+RUN addgroup -S portal && adduser -S portal -G portal \
+  && mkdir -p /app/logs /app/data \
+  && chown -R portal:portal /app/logs /app/data
 
 COPY --from=backend-build /app/backend/package.json ./
 COPY --from=backend-build /app/backend/node_modules ./node_modules
