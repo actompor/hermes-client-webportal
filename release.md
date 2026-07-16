@@ -16,3 +16,5 @@
 - Fix Azure Communicate/History: writable `LOG_DIR` + non-root container dirs
 - Model dropdown falls back to remote Hermes `/v1/models` when local Python inventory is unavailable
 - Chat no longer blocked when inventory fails; default `hermes-agent` always available
+- Details: [docs/release-1.0.3-azure-communicate-history-fix.md](docs/release-1.0.3-azure-communicate-history-fix.md)
+- Tag: `release`
